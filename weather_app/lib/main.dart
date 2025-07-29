@@ -35,14 +35,14 @@ class _WeatherScreenState extends State<WeatherScreen> {
   final String apiKey = 'bd673a2172b621664a62c620e7808e2b';
   final String baseUrl = 'https://api.openweathermap.org/data/2.5/weather';
   final String oneCallUrl = 'https://api.openweathermap.org/data/2.5/onecall';
-  String city = 'Kyiv, Ukraine';
-  String temperature = '10°C';
-  String description = 'Cloudy';
-  String rainChance = '0%';
-  String humidity = '73%';
-  String windSpeed = '10 km/h';
-  String sunrise = '4:53 am';
-  String sunset = '8:13 pm';
+  String? city; // Changed to nullable
+  String? temperature;
+  String? description;
+  String? rainChance;
+  String? humidity;
+  String? windSpeed;
+  String? sunrise;
+  String? sunset;
   bool isLoading = false;
   String errorMessage = '';
   final TextEditingController _searchController = TextEditingController();
@@ -71,6 +71,11 @@ class _WeatherScreenState extends State<WeatherScreen> {
         final lat = weatherData['coord']['lat'];
         final lon = weatherData['coord']['lon'];
         final timezoneOffset = (weatherData['timezone'] as int?) ?? 0; // In seconds
+
+        // Calculate local time and weekday
+        final localTime = DateTime.now().toUtc().add(Duration(seconds: timezoneOffset));
+        final weekday = DateFormat('EEEE').format(localTime);
+        final formattedTime = DateFormat('hh:mm a').format(localTime);
 
         setState(() {
           city = '${weatherData['name']}, ${weatherData['sys']['country'] ?? 'Unknown'}';
@@ -118,7 +123,8 @@ class _WeatherScreenState extends State<WeatherScreen> {
     });
   }
 
-  IconData _getWeatherIcon(String weatherMain) {
+  IconData _getWeatherIcon(String? weatherMain) {
+    if (weatherMain == null) return Icons.wb_cloudy;
     switch (weatherMain.toLowerCase()) {
       case 'clear':
         return Icons.wb_sunny;
@@ -136,7 +142,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
   @override
   void initState() {
     super.initState();
-    fetchWeather('Kyiv');
+    // Removed fetchWeather('Kyiv') to avoid initial API call
   }
 
   @override
@@ -188,79 +194,88 @@ class _WeatherScreenState extends State<WeatherScreen> {
                               style: const TextStyle(color: Colors.red, fontSize: 18),
                             ),
                           )
-                        : ListView(
-                            padding: const EdgeInsets.all(16.0),
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                        : city == null
+                            ? const Center(
+                                child: Text(
+                                  'Search for a city to view weather',
+                                  style: TextStyle(color: Colors.white70, fontSize: 18),
+                                ),
+                              )
+                            : ListView(
+                                padding: const EdgeInsets.all(16.0),
                                 children: [
-                                  const Icon(Icons.wb_cloudy, color: Colors.orange, size: 40),
-                                  const SizedBox(width: 10),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Text(
-                                        DateFormat('EEEE, hh:mm a').format(DateTime.now().toUtc().add(const Duration(hours: 5, minutes: 45))),
-                                        style: TextStyle(fontSize: 16, color: Colors.grey[400]),
+                                      Icon(_getWeatherIcon(description), color: Colors.orange, size: 40),
+                                      const SizedBox(width: 10),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            DateFormat('EEEE, hh:mm a').format(
+                                              DateTime.now().toUtc().add(const Duration(seconds: 0)), // Use API timezone offset if available
+                                            ),
+                                            style: TextStyle(fontSize: 16, color: Colors.grey[400]),
+                                          ),
+                                          Text(
+                                            description!,
+                                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                                          ),
+                                          Text(
+                                            temperature!,
+                                            style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.white),
+                                          ),
+                                          Text(
+                                            city!,
+                                            style: TextStyle(fontSize: 18, color: Colors.grey[400]),
+                                          ),
+                                        ],
                                       ),
-                                      Text(
-                                        description,
-                                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-                                      ),
-                                      Text(
-                                        temperature,
-                                        style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.white),
-                                      ),
-                                      Text(
-                                        city,
-                                        style: TextStyle(fontSize: 18, color: Colors.grey[400]),
-                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[800],
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.wb_sunny, color: Color(0xFFFFD700)),
+                                            const SizedBox(width: 5),
+                                            Text(sunrise!, style: const TextStyle(color: Colors.white)),
+                                          ],
+                                        ),
+                                        Text(
+                                          '------  ${(DateTime.now().toUtc().hour)}h ${(DateTime.now().toUtc().minute)}m  ------',
+                                          style: TextStyle(color: Colors.grey[600]),
+                                        ),
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.wb_sunny, color: Color(0xFFFFD700)),
+                                            const SizedBox(width: 5),
+                                            Text(sunset!, style: const TextStyle(color: Colors.white)),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      _buildWeatherCard('Rain', rainChance!, Icons.water_drop),
+                                      _buildWeatherCard('Humidity', humidity!, Icons.opacity),
+                                      _buildWeatherCard('Wind', windSpeed!, Icons.air),
                                     ],
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 20),
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[800],
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.wb_sunny, color: Color(0xFFFFD700)),
-                                        const SizedBox(width: 5),
-                                        Text(sunrise, style: const TextStyle(color: Colors.white)),
-                                      ],
-                                    ),
-                                    Text(
-                                      '------  ${(DateTime.now().toUtc().add(const Duration(hours: 5, minutes: 45)).hour)}h ${(DateTime.now().toUtc().add(const Duration(hours: 5, minutes: 45)).minute)}m  ------',
-                                      style: TextStyle(color: Colors.grey[600]),
-                                    ),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.wb_sunny, color: Color(0xFFFFD700)),
-                                        const SizedBox(width: 5),
-                                        Text(sunset, style: const TextStyle(color: Colors.white)),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  _buildWeatherCard('Rain', rainChance, Icons.water_drop),
-                                  _buildWeatherCard('Humidity', humidity, Icons.opacity),
-                                  _buildWeatherCard('Wind', windSpeed, Icons.air),
-                                ],
-                              ),
-                            ],
-                          ),
               ),
             ],
           ),
@@ -289,6 +304,6 @@ class _WeatherScreenState extends State<WeatherScreen> {
 
 extension StringExtension on String {
   String capitalize() {
-    return "${this[0].toUpperCase()}${this.substring(1).toLowerCase()}";
+    return "${this[0].toUpperCase()}${substring(1).toLowerCase()}";
   }
 }
