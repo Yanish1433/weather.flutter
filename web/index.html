@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather App</title>
+</head>
+<body>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+    import 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+    import 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBG76Xe-U-1XXeevaBpoTUXq3v43BNKFlE",
+      authDomain: "weather-3bd18.firebaseapp.com",
+      projectId: "weather-3bd18",
+      storageBucket: "weather-3bd18.firebasestorage.app",
+      messagingSenderId: "841896115697",
+      appId: "1:841896115697:web:4c8e58db31857019f71850",
+      measurementId: "G-CNE3400NV5"
+    };
+
+    initializeApp(firebaseConfig);
+  </script>
+  <script src="main.dart.js" type="application/javascript"></script>
+</body>
+</html>
